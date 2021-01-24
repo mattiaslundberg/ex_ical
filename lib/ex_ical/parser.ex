@@ -46,17 +46,40 @@ defmodule ExIcal.Parser do
     |> Map.get(:events)
   end
 
-  defp parse_line("BEGIN:VEVENT" <> _, data),           do: %{data | events: [%Event{} | data[:events]]}
-  defp parse_line("DTSTART" <> start, data),            do: data |> put_to_map(:start, process_date(start, data[:tzid]))
-  defp parse_line("DTEND" <> endd, data),               do: data |> put_to_map(:end, process_date(endd, data[:tzid]))
-  defp parse_line("DTSTAMP" <> stamp, data),            do: data |> put_to_map(:stamp, process_date(stamp, data[:tzid]))
-  defp parse_line("SUMMARY:" <> summary, data),         do: data |> put_to_map(:summary, process_string(summary))
-  defp parse_line("DESCRIPTION:" <> description, data), do: data |> put_to_map(:description, process_string(description))
-  defp parse_line("UID:" <> uid, data),                 do: data |> put_to_map(:uid, uid)
-  defp parse_line("RRULE:" <> rrule, data),             do: data |> put_to_map(:rrule, process_rrule(rrule, data[:tzid]))
-  defp parse_line("TZID:" <> tzid, data),               do: data |> Map.put(:tzid, tzid)
-  defp parse_line("CATEGORIES:" <> categories, data),    do: data |> put_to_map(:categories, String.split(categories, ","))
-  defp parse_line(_, data), do: data
+  def parse_line("BEGIN:VEVENT" <> _, data), do: %{data | events: [%Event{} | data[:events]]}
+
+  def parse_line("DTSTART" <> start, data),
+    do: data |> put_to_map(:start, process_date(start, data[:tzid]))
+
+  def parse_line("DTEND" <> endd, data),
+    do: data |> put_to_map(:end, process_date(endd, data[:tzid]))
+
+  def parse_line("DTSTAMP" <> stamp, data),
+    do: data |> put_to_map(:stamp, process_date(stamp, data[:tzid]))
+
+  def parse_line("SUMMARY:" <> summary, data),
+    do: data |> put_to_map(:summary, process_string(summary))
+
+  def parse_line("SUMMARY;LANGUAGE=" <> <<_::binary-size(2)>> <> ":" <> summary, data),
+    do: data |> put_to_map(:summary, process_string(summary))
+
+  def parse_line("DESCRIPTION:" <> description, data),
+    do: data |> put_to_map(:description, process_string(description))
+
+  def parse_line("DESCRIPTION;LANGUAGE=" <> <<_::binary-size(2)>> <> ":" <> summary, data),
+    do: data |> put_to_map(:description, process_string(summary))
+
+  def parse_line("UID:" <> uid, data), do: data |> put_to_map(:uid, uid)
+
+  def parse_line("RRULE:" <> rrule, data),
+    do: data |> put_to_map(:rrule, process_rrule(rrule, data[:tzid]))
+
+  def parse_line("TZID:" <> tzid, data), do: data |> Map.put(:tzid, tzid)
+
+  def parse_line("CATEGORIES:" <> categories, data),
+    do: data |> put_to_map(:categories, String.split(categories, ","))
+
+  def parse_line(_, data), do: data
 
   defp put_to_map(%{events: [event | events]} = data, key, value) do
     updated_event = %{event | key => value}
