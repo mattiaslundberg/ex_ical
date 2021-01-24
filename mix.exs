@@ -2,15 +2,16 @@ defmodule ExIcal.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :ex_ical,
+    [
+      app: :ex_ical,
       version: "0.2.0",
       elixir: "~> 1.4",
       description: "ICalendar parser.",
       package: package(),
       deps: deps(),
       dialyzer: [plt_add_deps: true],
-      build_embedded: Mix.env == :prod,
-      start_permanent: Mix.env == :prod,
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
       docs: [
         main: ExIcal,
         source_url: "https://github.com/fazibear/export"
@@ -23,7 +24,7 @@ defmodule ExIcal.Mixfile do
       maintainers: ["Michał Kalbarczyk"],
       licenses: ["MIT"],
       links: %{github: "https://github.com/fazibear/ex_ical"}
-   ]
+    ]
   end
 
   def application() do
@@ -32,9 +33,9 @@ defmodule ExIcal.Mixfile do
 
   defp deps() do
     [
-      {:ex_doc, "~> 0.16", only: :dev, runtime: false},
-      {:credo, "~> 0.9.1", only: [:dev, :test], runtime: false},
-      {:timex, "~> 3.1"}
+      {:ex_doc, "~> 0.23", only: :dev, runtime: false},
+      {:credo, "~> 1.5.4", only: [:dev, :test], runtime: false},
+      {:timex, "~> 3.6"}
     ]
   end
 end
