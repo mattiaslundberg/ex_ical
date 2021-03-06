@@ -14,7 +14,7 @@ defmodule ExIcal.Parser do
   issue on GitHub.
   """
 
-  alias ExIcal.{DateParser,Event}
+  alias ExIcal.{DateParser, Event}
 
   @doc """
   Parses an iCal string into a list of events.
@@ -31,16 +31,16 @@ defmodule ExIcal.Parser do
   ```
   """
 
-  @spec parse(String.t) :: [%Event{}]
+  @spec parse(String.t()) :: [%Event{}]
   def parse(data) do
     data
     |> String.replace(~s"\n\t", ~S"\n")
     |> String.replace(~s"\n\x20", ~S"\n")
     |> String.replace(~s"\"", "")
     |> String.split("\n")
-    |> Enum.reduce(%{events: []}, fn(line, data) ->
+    |> Enum.reduce(%{events: []}, fn line, data ->
       line
-      |> String.trim() 
+      |> String.trim()
       |> parse_line(data)
     end)
     |> Map.get(:events)
@@ -61,6 +61,9 @@ defmodule ExIcal.Parser do
     do: data |> put_to_map(:summary, process_string(summary))
 
   def parse_line("SUMMARY;LANGUAGE=" <> <<_::binary-size(2)>> <> ":" <> summary, data),
+    do: data |> put_to_map(:summary, process_string(summary))
+
+  def parse_line("SUMMARY;LANGUAGE=" <> <<_::binary-size(5)>> <> ":" <> summary, data),
     do: data |> put_to_map(:summary, process_string(summary))
 
   def parse_line("DESCRIPTION:" <> description, data),
@@ -85,27 +88,35 @@ defmodule ExIcal.Parser do
     updated_event = %{event | key => value}
     %{data | events: [updated_event | events]}
   end
+
   defp put_to_map(data, _key, _value), do: data
 
   defp process_date(":" <> date, tzid), do: DateParser.parse(date, tzid)
+
   defp process_date(";" <> date, _) do
     [timezone, date] = date |> String.split(":")
-    timezone = case timezone do
-      "TZID=" <> timezone -> timezone
-      _ -> nil
-    end
+
+    timezone =
+      case timezone do
+        "TZID=" <> timezone -> timezone
+        _ -> nil
+      end
+
     DateParser.parse(date, timezone)
   end
 
   defp process_rrule(rrule, tzid) do
-    rrule |> String.split(";") |> Enum.reduce(%{}, fn(rule, hash) ->
+    rrule
+    |> String.split(";")
+    |> Enum.reduce(%{}, fn rule, hash ->
       [key, value] = rule |> String.split("=")
-      case key |> String.downcase |> String.to_atom do
-        :until    -> hash |> Map.put(:until, DateParser.parse(value, tzid))
+
+      case key |> String.downcase() |> String.to_atom() do
+        :until -> hash |> Map.put(:until, DateParser.parse(value, tzid))
         :interval -> hash |> Map.put(:interval, String.to_integer(value))
-        :count    -> hash |> Map.put(:count, String.to_integer(value))
-        :freq     -> hash |> Map.put(:freq, value)
-        _         -> hash
+        :count -> hash |> Map.put(:count, String.to_integer(value))
+        :freq -> hash |> Map.put(:freq, value)
+        _ -> hash
       end
     end)
   end
